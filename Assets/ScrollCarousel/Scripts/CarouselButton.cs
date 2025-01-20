@@ -1,41 +1,42 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine;
 
-public class CarouselButton : Button
+namespace ScrollCarousel
 {
-    [SerializeField] private Action buttonAction;
-    private ScrollCarousel carousel;
-    private bool isFocused = false;
-
-    protected override void Start()
+    public class CarouselButton : Button
     {
-        base.Start();
-        carousel = GetComponentInParent<ScrollCarousel>();
+        [SerializeField] private Action buttonAction;
+        private Carousel carousel;
+        private bool isFocused = false;
 
-        if (carousel == null)
+        protected override void Start()
         {
-            Debug.LogWarning("CarouselButton: No ScrollCarousel found in parent.");
-        }
-    }
+            base.Start();
+            carousel = GetComponentInParent<Carousel>();
 
-    public override void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
-    {
-        if (isFocused)
-        {
-            base.OnPointerClick(eventData);
-            buttonAction?.Invoke();
+            if (carousel == null)
+            {
+                Debug.LogWarning("CarouselButton: No ScrollCarousel found in parent.");
+            }
         }
-        else 
-        {
-            carousel.FocusItem(this.GetComponent<RectTransform>());
-        }
-    }
 
-    public void SetFocus(bool focus)
-    {
-        this.isFocused = focus;
+        public override void OnPointerClick(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (isFocused)
+            {
+                base.OnPointerClick(eventData);
+                buttonAction?.Invoke();
+            }
+            else 
+            {
+                carousel.FocusItem(this.GetComponent<RectTransform>());
+            }
+        }
+
+        public void SetFocus(bool focus)
+        {
+            this.isFocused = focus;
+        }
     }
 }

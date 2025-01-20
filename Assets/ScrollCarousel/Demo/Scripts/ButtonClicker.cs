@@ -3,17 +3,20 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class ButtonClicker : MonoBehaviour
+namespace ScrollCarousel.Demo
 {
-    [SerializeField] private TMP_Text _subtitle;
-
-    public void ChangeButtonClicked(int num)
+    public class ButtonClicker : MonoBehaviour
     {
-        _subtitle.text = $"Clicked Button: {num}";
-    }
+        [SerializeField] private TMP_Text _subtitle;
 
-    public void OpenSourceRepository()
-    {
-        Application.OpenURL("https://github.com/pablogozalvez/ScrollCarousel");
+        public void ChangeButtonClicked(int num)
+        {
+            _subtitle.text = $"Clicked Button: {num}";
+        }
+
+        public void OpenSourceRepository()
+        {
+            Application.OpenURL("https://github.com/pablogozalvez/ScrollCarousel");
+        }
     }
 }
