@@ -35,12 +35,12 @@ namespace ScrollCarousel
 
         private void AddAllChildrenToItemList()
         {
-            carousel.items.Clear();
+            carousel.Items.Clear();
             foreach (Transform child in carousel.transform)
             {
                 if (child is RectTransform rectTransform)
                 {
-                    carousel.items.Add(rectTransform);
+                    carousel.Items.Add(rectTransform);
                 }
             }
             EditorUtility.SetDirty(carousel);
@@ -48,29 +48,29 @@ namespace ScrollCarousel
 
         private void OrganizeItemsInEditor()
         {
-            if (carousel.items.Count == 0) return;
+            if (carousel.Items.Count == 0) return;
 
             Vector2 centerPoint = carousel.GetComponent<RectTransform>().rect.center;
 
-            for (int i = 0; i < carousel.items.Count; i++)
+            for (int i = 0; i < carousel.Items.Count; i++)
             {
                 Vector2 targetPosition;
-                if (carousel.infiniteScroll)
+                if (carousel.InfiniteScroll)
                 {
-                    float angle = (360f / carousel.items.Count) * (i - carousel.startItem);
+                    float angle = (360f / carousel.Items.Count) * (i - carousel.StartItem);
                     float radians = angle * Mathf.Deg2Rad;
                     targetPosition = new Vector2(
-                        centerPoint.x + Mathf.Sin(radians) * carousel.circleRadius,
-                        centerPoint.y + (1 - Mathf.Cos(radians)) * carousel.circleRadius * 0.5f
+                        centerPoint.x + Mathf.Sin(radians) * carousel.CircleRadius,
+                        centerPoint.y + (1 - Mathf.Cos(radians)) * carousel.CircleRadius * 0.5f
                     );
                 }
                 else
                 {
-                    float offset = GetTotalOffset(i) - GetTotalOffset(carousel.startItem);
+                    float offset = GetTotalOffset(i) - GetTotalOffset(carousel.StartItem);
                     targetPosition = new Vector2(centerPoint.x + offset, centerPoint.y);
                 }
 
-                carousel.items[i].anchoredPosition = targetPosition;
+                carousel.Items[i].anchoredPosition = targetPosition;
             }
 
             EditorUtility.SetDirty(carousel);
@@ -78,75 +78,75 @@ namespace ScrollCarousel
 
         private void UpdateItemsAppearanceInEditor()
         {
-            if (carousel.items.Count == 0) return;
+            if (carousel.Items.Count == 0) return;
 
             Vector2 centerPoint = carousel.GetComponent<RectTransform>().rect.center;
-            float maxDistance = carousel.infiniteScroll ? carousel.circleRadius : GetItemSpacing(0);
+            float maxDistance = carousel.InfiniteScroll ? carousel.CircleRadius : GetItemspacing(0);
 
-            for (int i = 0; i < carousel.items.Count; i++)
+            for (int i = 0; i < carousel.Items.Count; i++)
             {
-                if (!carousel.items[i]) continue;
+                if (!carousel.Items[i]) continue;
 
                 // Update visual sorting order based on distance from center
-                float visualDistance = Mathf.Abs(i - carousel.startItem);
-                carousel.items[i].SetSiblingIndex(carousel.items.Count - (int)(visualDistance * 2));
+                float visualDistance = Mathf.Abs(i - carousel.StartItem);
+                carousel.Items[i].SetSiblingIndex(carousel.Items.Count - (int)(visualDistance * 2));
 
                 float distance;
-                if (carousel.infiniteScroll)
+                if (carousel.InfiniteScroll)
                 {
-                    float angle = (360f / carousel.items.Count) * (i - carousel.startItem);
-                    distance = Mathf.Abs(angle) * carousel.circleRadius / 180f;
+                    float angle = (360f / carousel.Items.Count) * (i - carousel.StartItem);
+                    distance = Mathf.Abs(angle) * carousel.CircleRadius / 180f;
                 }
                 else
                 {
-                    distance = Mathf.Abs(carousel.items[i].anchoredPosition.x - centerPoint.x);
+                    distance = Mathf.Abs(carousel.Items[i].anchoredPosition.x - centerPoint.x);
                 }
 
                 float normalizedDistance = Mathf.Clamp01(distance / maxDistance);
 
                 // Scale
-                float targetScale = i == carousel.startItem ? carousel.centeredScale : carousel.nonCenteredScale;
+                float targetScale = i == carousel.StartItem ? carousel.CenteredScale : carousel.NonCenteredScale;
                 Vector3 newScale = new Vector3(targetScale, targetScale, 1f);
                 if (!float.IsNaN(newScale.x) && !float.IsNaN(newScale.y))
                 {
-                    carousel.items[i].localScale = newScale;
+                    carousel.Items[i].localScale = newScale;
                 }
 
                 // Rotation
-                float rotationSign = (carousel.items[i].anchoredPosition.x > centerPoint.x) ? 1f : -1f;
-                float targetRotationY = carousel.maxRotationAngle * normalizedDistance * rotationSign;
+                float rotationSign = (carousel.Items[i].anchoredPosition.x > centerPoint.x) ? 1f : -1f;
+                float targetRotationY = carousel.MaxRotationAngle * normalizedDistance * rotationSign;
                 if (!float.IsNaN(targetRotationY))
                 {
-                    carousel.items[i].localRotation = Quaternion.Euler(30, targetRotationY, 0);
+                    carousel.Items[i].localRotation = Quaternion.Euler(30, targetRotationY, 0);
                 }
             }
 
             EditorUtility.SetDirty(carousel);
         }
 
-        private float GetItemSpacing(int index)
+        private float GetItemspacing(int index)
         {
-            float currentItemScale = (index == carousel.startItem) ? carousel.centeredScale : carousel.nonCenteredScale;
-            float nextItemScale = (index + 1 == carousel.startItem) ? carousel.centeredScale : carousel.nonCenteredScale;
+            float currentItemscale = (index == carousel.StartItem) ? carousel.CenteredScale : carousel.NonCenteredScale;
+            float nextItemscale = (index + 1 == carousel.StartItem) ? carousel.CenteredScale : carousel.NonCenteredScale;
             
-            float currentWidth = carousel.items[index].rect.width * currentItemScale;
-            float nextWidth = carousel.items[index + 1].rect.width * nextItemScale;
+            float currentWidth = carousel.Items[index].rect.width * currentItemscale;
+            float nextWidth = carousel.Items[index + 1].rect.width * nextItemscale;
             
-            return (currentWidth + nextWidth) / 2 + carousel.itemSpacing;
+            return (currentWidth + nextWidth) / 2 + carousel.Itemspacing;
         }
 
         private float GetTotalOffset(int index)
         {
             float offset = 0f;
-            int startIdx = Math.Min(index, carousel.startItem);
-            int endIdx = Math.Max(index, carousel.startItem);
+            int startIdx = Math.Min(index, carousel.StartItem);
+            int endIdx = Math.Max(index, carousel.StartItem);
             
             for (int i = startIdx; i < endIdx; i++)
             {
-                offset += GetItemSpacing(i);
+                offset += GetItemspacing(i);
             }
             
-            return index < carousel.startItem ? -offset : offset;
+            return index < carousel.StartItem ? -offset : offset;
         }
     }
 }

@@ -4,58 +4,67 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System.ComponentModel;
 
 namespace ScrollCarousel
 {
     public class Carousel : MonoBehaviour, IDragHandler, IEndDragHandler, IBeginDragHandler
     {
         [Header("Items")]
-        public List<RectTransform> items = new List<RectTransform>();
+        [Description("List of items to be displayed in the carousel")]
+        public List<RectTransform> Items = new List<RectTransform>();
 
         [Header("Position")]
-        public int startItem = 0;
-        public float itemSpacing = 50f;
+        [Description("Index of the item that will be centered at the start")]
+        public int StartItem = 0;
+        [Description("Spacing between items")]
+        public float Itemspacing = 50f;
 
         [Header("Scale")]
-        public float centeredScale = 1f;
-        public float nonCenteredScale = 0.7f;
-        [SerializeField] private float scaleSmoothSpeed = 5f;
-
+        [Description("Scale of the centered item")]
+        public float CenteredScale = 1f;
+        [Description("Scale of the non-centered items")]
+        public float NonCenteredScale = 0.7f;
         [Header("Rotation")]
-        [SerializeField] public float maxRotationAngle = 10f;
-        [SerializeField] private float rotationSmoothSpeed = 5f;
+        [Description("Maximum rotation angle of the items")]
+        [SerializeField] public float MaxRotationAngle = 10f;
+        [SerializeField] private float _rotationSmoothSpeed = 5f;
 
         [Header("Swipe Settings")]
-        [SerializeField] private float minSwipeDistance = 10f;
-        [SerializeField] private float snapSpeed = 10f;
-        [SerializeField] public bool infiniteScroll = false;
-        [SerializeField] public float circleRadius = 500f;
+        [SerializeField] private float _snapSpeed = 10f;
+        [Description("Enable infinite scrolling")]
+        [SerializeField] public bool InfiniteScroll = false;
+        [Description("Radius of the infinite scroll circle")]
+        [SerializeField] public float CircleRadius = 500f;
         
         [Header("Colors")]
-        public bool colorAnimation = false;
-        public Color focustedColor = Color.white;
-        public Color nonFocustedColor = Color.gray;
+        [Description("Enable color animation")]
+        public bool ColorAnimation = false;
+        [Description("Color of the focused item")]
+        public Color FocustedColor = Color.white;
+        [Description("Color of the non-focused items")]
+        public Color NonFocustedColor = Color.gray;
 
-        private RectTransform rectTransform;
-        private int currentItemIndex = 0;
-        private Vector2 startDragPosition;
-        private bool isSnapping = false;
-        private float currentRotationOffset = 0f;
+        private RectTransform _rectTransform;
+        private int _currentItemIndex = 0;
+        private Vector2 _startDragPosition;
+        private bool _isSnapping = false;
+        private float _currentRotationOffset = 0f;
 
         private void Awake()
         {
-            rectTransform = GetComponent<RectTransform>();
+            _rectTransform = GetComponent<RectTransform>();
         }
         
         private void Start()
         {
-            FocusItem(startItem);
+            FocusItem(StartItem);
             PositionItems(false);
         }
 
         private void Update()
         {
-            if (isSnapping)
+            if (_isSnapping)
             {
                 MoveToItem();
             }
@@ -63,48 +72,48 @@ namespace ScrollCarousel
             UpdateItemsAppearance();
         }
 
-        private float GetItemSpacing(int index)
+        private float GetItemspacing(int index)
         {
-            float currentItemScale = (index == currentItemIndex) ? centeredScale : nonCenteredScale;
-            float nextItemScale = (index + 1 == currentItemIndex) ? centeredScale : nonCenteredScale;
+            float currentItemscale = (index == _currentItemIndex) ? CenteredScale : NonCenteredScale;
+            float nextItemscale = (index + 1 == _currentItemIndex) ? CenteredScale : NonCenteredScale;
             
-            float currentWidth = items[index].rect.width * currentItemScale;
-            float nextWidth = items[index + 1].rect.width * nextItemScale;
+            float currentWidth = Items[index].rect.width * currentItemscale;
+            float nextWidth = Items[index + 1].rect.width * nextItemscale;
             
-            return (currentWidth + nextWidth) / 2 + itemSpacing;
+            return (currentWidth + nextWidth) / 2 + Itemspacing;
         }
 
         private float GetTotalOffset(int index)
         {
             float offset = 0f;
-            int startIdx = Math.Min(index, currentItemIndex);
-            int endIdx = Math.Max(index, currentItemIndex);
+            int startIdx = Math.Min(index, _currentItemIndex);
+            int endIdx = Math.Max(index, _currentItemIndex);
             
             for (int i = startIdx; i < endIdx; i++)
             {
-                offset += GetItemSpacing(i);
+                offset += GetItemspacing(i);
             }
             
-            return index < currentItemIndex ? -offset : offset;
+            return index < _currentItemIndex ? -offset : offset;
         }
 
         private void PositionItems(bool animate = true)
         {
-            if (items.Count == 0) return;
+            if (Items.Count == 0) return;
 
-            Vector2 centerPoint = rectTransform.rect.center;
-            float targetTime = animate ? Time.deltaTime * snapSpeed : 1f;
+            Vector2 centerPoint = _rectTransform.rect.center;
+            float targetTime = animate ? Time.deltaTime * _snapSpeed : 1f;
 
-            for (int i = 0; i < items.Count; i++)
+            for (int i = 0; i < Items.Count; i++)
             {
                 Vector2 targetPosition;
-                if (infiniteScroll)
+                if (InfiniteScroll)
                 {
-                    float angle = (360f / items.Count) * (i - currentItemIndex);
+                    float angle = (360f / Items.Count) * (i - _currentItemIndex);
                     float radians = angle * Mathf.Deg2Rad;
                     targetPosition = new Vector2(
-                        centerPoint.x + Mathf.Sin(radians) * circleRadius,
-                        centerPoint.y + (1 - Mathf.Cos(radians)) * circleRadius * 0.5f
+                        centerPoint.x + Mathf.Sin(radians) * CircleRadius,
+                        centerPoint.y + (1 - Mathf.Cos(radians)) * CircleRadius * 0.5f
                     );
                 }
                 else
@@ -115,64 +124,64 @@ namespace ScrollCarousel
 
                 if (animate)
                 {
-                    items[i].anchoredPosition = Vector2.Lerp(
-                        items[i].anchoredPosition,
+                    Items[i].anchoredPosition = Vector2.Lerp(
+                        Items[i].anchoredPosition,
                         targetPosition,
                         targetTime
                     );
                 }
                 else
                 {
-                    items[i].anchoredPosition = targetPosition;
+                    Items[i].anchoredPosition = targetPosition;
                 }
             }
         }
 
         private void UpdateItemsAppearance()
         {
-            if (items.Count == 0) return;
+            if (Items.Count == 0) return;
 
-            Vector2 centerPoint = rectTransform.rect.center;
-            float maxDistance = infiniteScroll ? circleRadius : GetItemSpacing(0);
+            Vector2 centerPoint = _rectTransform.rect.center;
+            float maxDistance = InfiniteScroll ? CircleRadius : GetItemspacing(0);
 
-            for (int i = 0; i < items.Count; i++)
+            for (int i = 0; i < Items.Count; i++)
             {
-                if (!items[i]) continue;
+                if (!Items[i]) continue;
 
                 // Update visual sorting order based on distance from center
-                float visualDistance = Mathf.Abs(i - currentItemIndex);
-                items[i].SetSiblingIndex(items.Count - (int)(visualDistance * 2));
+                float visualDistance = Mathf.Abs(i - _currentItemIndex);
+                Items[i].SetSiblingIndex(Items.Count - (int)(visualDistance * 2));
 
                 float distance;
-                if (infiniteScroll)
+                if (InfiniteScroll)
                 {
-                    float angle = (360f / items.Count) * (i - currentItemIndex);
-                    distance = Mathf.Abs(angle) * circleRadius / 180f;
+                    float angle = (360f / Items.Count) * (i - _currentItemIndex);
+                    distance = Mathf.Abs(angle) * CircleRadius / 180f;
                 }
                 else
                 {
-                    distance = Mathf.Abs(items[i].anchoredPosition.x - centerPoint.x);
+                    distance = Mathf.Abs(Items[i].anchoredPosition.x - centerPoint.x);
                 }
 
                 float normalizedDistance = Mathf.Clamp01(distance / maxDistance);
 
                 // Scale
-                float targetScale = Mathf.Lerp(centeredScale, nonCenteredScale, normalizedDistance);
+                float targetScale = Mathf.Lerp(CenteredScale, NonCenteredScale, normalizedDistance);
                 Vector3 newScale = new Vector3(targetScale, targetScale, 1f);
                 if (!float.IsNaN(newScale.x) && !float.IsNaN(newScale.y))
                 {
-                    items[i].localScale = newScale;
+                    Items[i].localScale = newScale;
                 }
 
                 // Rotation
-                float rotationSign = (items[i].anchoredPosition.x > centerPoint.x) ? 1f : -1f;
-                float targetRotationY = maxRotationAngle * normalizedDistance * rotationSign;
+                float rotationSign = (Items[i].anchoredPosition.x > centerPoint.x) ? 1f : -1f;
+                float targetRotationY = MaxRotationAngle * normalizedDistance * rotationSign;
                 if (!float.IsNaN(targetRotationY))
                 {
-                    items[i].localRotation = Quaternion.Slerp(
-                        items[i].localRotation,
+                    Items[i].localRotation = Quaternion.Slerp(
+                        Items[i].localRotation,
                         Quaternion.Euler(30, targetRotationY, 0),
-                        Time.deltaTime * rotationSmoothSpeed
+                        Time.deltaTime * _rotationSmoothSpeed
                     );
                 }
             }
@@ -180,26 +189,26 @@ namespace ScrollCarousel
         
         public void OnBeginDrag(PointerEventData eventData)
         {
-            isSnapping = false;
-            startDragPosition = eventData.position;
+            _isSnapping = false;
+            _startDragPosition = eventData.position;
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (items.Count == 0) return;
+            if (Items.Count == 0) return;
 
-            if (infiniteScroll)
+            if (InfiniteScroll)
             {
-                float rotationDelta = (eventData.delta.x / circleRadius) * 45f;
-                currentRotationOffset += rotationDelta;
-                RotateItemsCircular(currentRotationOffset);
+                float rotationDelta = (eventData.delta.x / CircleRadius) * 45f;
+                _currentRotationOffset += rotationDelta;
+                RotateItemsCircular(_currentRotationOffset);
             }
             else
             {
-                float leftBound = rectTransform.rect.center.x + GetTotalOffset(0);
-                float rightBound = rectTransform.rect.center.x + GetTotalOffset(items.Count - 1);
+                float leftBound = _rectTransform.rect.center.x + GetTotalOffset(0);
+                float rightBound = _rectTransform.rect.center.x + GetTotalOffset(Items.Count - 1);
                 
-                float currentCenterItemPos = items[currentItemIndex].anchoredPosition.x;
+                float currentCenterItemPos = Items[_currentItemIndex].anchoredPosition.x;
                 
                 if ((currentCenterItemPos >= leftBound && eventData.delta.x > 0) ||
                     (currentCenterItemPos <= rightBound && eventData.delta.x < 0))
@@ -211,7 +220,7 @@ namespace ScrollCarousel
                         dragFactor = 0.5f;
                     }
 
-                    foreach (RectTransform item in items)
+                    foreach (RectTransform item in Items)
                     {
                         item.anchoredPosition += new Vector2(eventData.delta.x * dragFactor, 0);
                     }
@@ -221,34 +230,34 @@ namespace ScrollCarousel
 
         private void RotateItemsCircular(float rotationOffset)
         {
-            Vector2 centerPoint = rectTransform.rect.center;
+            Vector2 centerPoint = _rectTransform.rect.center;
             
-            for (int i = 0; i < items.Count; i++)
+            for (int i = 0; i < Items.Count; i++)
             {
-                float baseAngle = (360f / items.Count) * (i - currentItemIndex);
+                float baseAngle = (360f / Items.Count) * (i - _currentItemIndex);
                 float angle = baseAngle + rotationOffset;
                 float radians = angle * Mathf.Deg2Rad;
                 
                 Vector2 targetPosition = new Vector2(
-                    centerPoint.x + Mathf.Sin(radians) * circleRadius,
-                    centerPoint.y + (1 - Mathf.Cos(radians)) * circleRadius * 0.5f
+                    centerPoint.x + Mathf.Sin(radians) * CircleRadius,
+                    centerPoint.y + (1 - Mathf.Cos(radians)) * CircleRadius * 0.5f
                 );
                 
-                items[i].anchoredPosition = targetPosition;
+                Items[i].anchoredPosition = targetPosition;
             }
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            float swipeDistance = eventData.position.x - startDragPosition.x;
+            float swipeDistance = eventData.position.x - _startDragPosition.x;
 
-            if (infiniteScroll)
+            if (InfiniteScroll)
             {
                 float closestDistance = float.MaxValue;
                 int closestIndex = 0;
-                for (int i = 0; i < items.Count; i++)
+                for (int i = 0; i < Items.Count; i++)
                 {
-                    float angle = (360f / items.Count) * (i - currentItemIndex) + currentRotationOffset;
+                    float angle = (360f / Items.Count) * (i - _currentItemIndex) + _currentRotationOffset;
                     float distance = Mathf.Abs(Mathf.DeltaAngle(0, angle));
                     if (distance < closestDistance)
                     {
@@ -260,12 +269,12 @@ namespace ScrollCarousel
             }
             else
             {
-                float centerX = rectTransform.rect.center.x;
+                float centerX = _rectTransform.rect.center.x;
                 int closestIndex = 0;
                 float closestDistance = float.MaxValue;
-                for (int i = 0; i < items.Count; i++)
+                for (int i = 0; i < Items.Count; i++)
                 {
-                    float distance = Mathf.Abs(items[i].anchoredPosition.x - centerX);
+                    float distance = Mathf.Abs(Items[i].anchoredPosition.x - centerX);
                     if (distance < closestDistance)
                     {
                         closestDistance = distance;
@@ -275,8 +284,8 @@ namespace ScrollCarousel
                 FocusItem(closestIndex);
             }
 
-            currentRotationOffset = 0f;
-            startDragPosition = Vector2.zero;
+            _currentRotationOffset = 0f;
+            _startDragPosition = Vector2.zero;
         }
 
         private void MoveToItem()
@@ -284,41 +293,41 @@ namespace ScrollCarousel
             PositionItems(true);
             
             // Check if we're close enough to stop snapping
-            RectTransform targetItem = items[currentItemIndex];
-            if (Mathf.Abs(targetItem.anchoredPosition.x - rectTransform.rect.center.x) < 0.1f)
+            RectTransform targetItem = Items[_currentItemIndex];
+            if (Mathf.Abs(targetItem.anchoredPosition.x - _rectTransform.rect.center.x) < 0.1f)
             {
-                isSnapping = false;
+                _isSnapping = false;
                 PositionItems(false);
             }
         }
 
         public void FocusItem(RectTransform item)
         {
-            FocusItem(items.IndexOf(item));
+            FocusItem(Items.IndexOf(item));
         }
 
         private void FocusItem(int index)
         {
-            if (index < 0 || index >= items.Count) return;
+            if (index < 0 || index >= Items.Count) return;
 
-            currentItemIndex = index;
-            currentRotationOffset = 0f;
-            isSnapping = true;
+            _currentItemIndex = index;
+            _currentRotationOffset = 0f;
+            _isSnapping = true;
             
-            for (int i = 0; i < items.Count; i++)
+            for (int i = 0; i < Items.Count; i++)
             {
-                var item = items[i];
-                bool isFocused = i == currentItemIndex;
+                var item = Items[i];
+                bool isFocused = i == _currentItemIndex;
                 
                 item.GetComponent<CarouselButton>()?.SetFocus(isFocused);
                 
-                if (colorAnimation)
+                if (ColorAnimation)
                 {
                     var image = item.GetComponent<Image>();
                     if (image != null)
                     {
-                        Color targetColor = isFocused ? focustedColor : nonFocustedColor;
-                        StartCoroutine(ColorAnimation(item, targetColor));
+                        Color targetColor = isFocused ? FocustedColor : NonFocustedColor;
+                        StartCoroutine(ColorAnimationCoroutine(item, targetColor));
                     }
                 }
             }
@@ -326,29 +335,30 @@ namespace ScrollCarousel
 
         private void GoToNext()
         {
-            if (infiniteScroll)
+            if (InfiniteScroll)
             {
-                FocusItem((currentItemIndex + 1) % items.Count);
+                FocusItem((_currentItemIndex + 1) % Items.Count);
             }
-            else if (currentItemIndex < items.Count - 1)
+            else if (_currentItemIndex < Items.Count - 1)
             {
-                FocusItem(currentItemIndex + 1);
+                FocusItem(_currentItemIndex + 1);
             }
         }
 
         private void GoToPrevious()
         {
-            if (infiniteScroll)
+            if (InfiniteScroll)
             {
-                FocusItem((currentItemIndex - 1 + items.Count) % items.Count);
+                FocusItem((_currentItemIndex - 1 + Items.Count) % Items.Count);
             }
-            else if (currentItemIndex > 0)
+            else if (_currentItemIndex > 0)
             {
-                FocusItem(currentItemIndex - 1);
+                FocusItem(_currentItemIndex - 1);
             }
         }
 
-        private IEnumerator ColorAnimation(RectTransform item, Color targetColor)
+
+        private IEnumerator ColorAnimationCoroutine(RectTransform item, Color targetColor)
         {
             Image image = item.GetComponent<Image>();
             if (image == null) yield break;
