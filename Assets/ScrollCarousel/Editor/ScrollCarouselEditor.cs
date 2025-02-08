@@ -87,6 +87,10 @@ namespace ScrollCarousel
             {
                 if (!carousel.items[i]) continue;
 
+                // Update visual sorting order based on distance from center
+                float visualDistance = Mathf.Abs(i - carousel.startItem);
+                carousel.items[i].SetSiblingIndex(carousel.items.Count - (int)(visualDistance * 2));
+
                 float distance;
                 if (carousel.infiniteScroll)
                 {
