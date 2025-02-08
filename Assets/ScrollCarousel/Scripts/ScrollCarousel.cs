@@ -241,27 +241,41 @@ namespace ScrollCarousel
         public void OnEndDrag(PointerEventData eventData)
         {
             float swipeDistance = eventData.position.x - startDragPosition.x;
-            
-            if (Mathf.Abs(swipeDistance) >= minSwipeDistance)
+
+            if (infiniteScroll)
             {
-                if (swipeDistance > 0)
+                float closestDistance = float.MaxValue;
+                int closestIndex = 0;
+                for (int i = 0; i < items.Count; i++)
                 {
-                    if (infiniteScroll || currentItemIndex > 0)
+                    float angle = (360f / items.Count) * (i - currentItemIndex) + currentRotationOffset;
+                    float distance = Mathf.Abs(Mathf.DeltaAngle(0, angle));
+                    if (distance < closestDistance)
                     {
-                        GoToPrevious();
+                        closestDistance = distance;
+                        closestIndex = i;
                     }
                 }
-                else if (swipeDistance < 0)
-                {
-                    if (infiniteScroll || currentItemIndex < items.Count - 1)
-                    {
-                        GoToNext();
-                    }
-                }
+                FocusItem(closestIndex);
             }
-            
+            else
+            {
+                float centerX = rectTransform.rect.center.x;
+                int closestIndex = 0;
+                float closestDistance = float.MaxValue;
+                for (int i = 0; i < items.Count; i++)
+                {
+                    float distance = Mathf.Abs(items[i].anchoredPosition.x - centerX);
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        closestIndex = i;
+                    }
+                }
+                FocusItem(closestIndex);
+            }
+
             currentRotationOffset = 0f;
-            FocusItem(currentItemIndex);
             startDragPosition = Vector2.zero;
         }
 
