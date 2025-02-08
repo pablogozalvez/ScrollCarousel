@@ -11,6 +11,8 @@ namespace ScrollCarousel
         
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
+
             carousel = (Carousel)target;
 
             GUILayout.BeginVertical("box");
@@ -30,7 +32,28 @@ namespace ScrollCarousel
 
             GUILayout.EndVertical();
 
-            base.OnInspectorGUI();
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("Items"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("StartItem"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("Itemspacing"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("CenteredScale"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("NonCenteredScale"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("MaxRotationAngle"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("_rotationSmoothSpeed"));
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("_snapSpeed"));
+
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("InfiniteScroll"));
+            if (serializedObject.FindProperty("InfiniteScroll").boolValue)
+            {
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("CircleRadius"));
+            }
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("ColorAnimation"));
+            if (serializedObject.FindProperty("ColorAnimation").boolValue)
+            {
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("FocustedColor"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("NonFocustedColor"));
+            }
+
+            serializedObject.ApplyModifiedProperties();
         }
 
         private void AddAllChildrenToItemList()
