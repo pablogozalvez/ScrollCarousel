@@ -54,9 +54,21 @@ namespace ScrollCarousel
 
             for (int i = 0; i < carousel.items.Count; i++)
             {
-                float offset = GetTotalOffset(i) - GetTotalOffset(carousel.startItem);
-
-                Vector2 targetPosition = new Vector2(centerPoint.x + offset, centerPoint.y);
+                Vector2 targetPosition;
+                if (carousel.infiniteScroll)
+                {
+                    float angle = (360f / carousel.items.Count) * (i - carousel.startItem);
+                    float radians = angle * Mathf.Deg2Rad;
+                    targetPosition = new Vector2(
+                        centerPoint.x + Mathf.Sin(radians) * carousel.circleRadius,
+                        centerPoint.y + (1 - Mathf.Cos(radians)) * carousel.circleRadius * 0.5f
+                    );
+                }
+                else
+                {
+                    float offset = GetTotalOffset(i) - GetTotalOffset(carousel.startItem);
+                    targetPosition = new Vector2(centerPoint.x + offset, centerPoint.y);
+                }
 
                 carousel.items[i].anchoredPosition = targetPosition;
             }
@@ -69,11 +81,24 @@ namespace ScrollCarousel
             if (carousel.items.Count == 0) return;
 
             Vector2 centerPoint = carousel.GetComponent<RectTransform>().rect.center;
-            float maxDistance = GetItemSpacing(0);
+            float maxDistance = carousel.infiniteScroll ? carousel.circleRadius : GetItemSpacing(0);
 
             for (int i = 0; i < carousel.items.Count; i++)
             {
                 if (!carousel.items[i]) continue;
+
+                float distance;
+                if (carousel.infiniteScroll)
+                {
+                    float angle = (360f / carousel.items.Count) * (i - carousel.startItem);
+                    distance = Mathf.Abs(angle) * carousel.circleRadius / 180f;
+                }
+                else
+                {
+                    distance = Mathf.Abs(carousel.items[i].anchoredPosition.x - centerPoint.x);
+                }
+
+                float normalizedDistance = Mathf.Clamp01(distance / maxDistance);
 
                 // Scale
                 float targetScale = i == carousel.startItem ? carousel.centeredScale : carousel.nonCenteredScale;
@@ -83,9 +108,6 @@ namespace ScrollCarousel
                     carousel.items[i].localScale = newScale;
                 }
 
-                float distance = Mathf.Abs(carousel.items[i].anchoredPosition.x - centerPoint.x);
-                float normalizedDistance = Mathf.Clamp01(distance / maxDistance);
-                
                 // Rotation
                 float rotationSign = (carousel.items[i].anchoredPosition.x > centerPoint.x) ? 1f : -1f;
                 float targetRotationY = carousel.maxRotationAngle * normalizedDistance * rotationSign;
