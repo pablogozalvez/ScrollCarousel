@@ -50,6 +50,7 @@ namespace ScrollCarousel
         private Vector2 _startDragPosition;
         private bool _isSnapping = false;
         private float _currentRotationOffset = 0f;
+        private Dictionary<RectTransform, Coroutine> _activeColorAnimations = new Dictionary<RectTransform, Coroutine>();
 
         private void Awake()
         {
@@ -59,7 +60,7 @@ namespace ScrollCarousel
         private void Start()
         {
             FocusItem(StartItem);
-            PositionItems(false);
+            ForceUpdate();
         }
 
         private void Update()
@@ -143,25 +144,34 @@ namespace ScrollCarousel
 
             Vector2 centerPoint = _rectTransform.rect.center;
             float maxDistance = InfiniteScroll ? CircleRadius : GetItemspacing(0);
+            float minDistance = float.MaxValue;
+            int closestIndex = -1;
 
             for (int i = 0; i < Items.Count; i++)
             {
                 if (!Items[i]) continue;
 
-                // Update visual sorting order based on distance from center
-                float visualDistance = Mathf.Abs(i - _currentItemIndex);
-                Items[i].SetSiblingIndex(Items.Count - (int)(visualDistance * 2));
-
                 float distance;
+                float angleDistance;
                 if (InfiniteScroll)
                 {
-                    float angle = (360f / Items.Count) * (i - _currentItemIndex);
-                    distance = Mathf.Abs(angle) * CircleRadius / 180f;
+                    float angle = (360f / Items.Count) * (i - _currentItemIndex) + _currentRotationOffset;
+                    distance = Mathf.Abs(Mathf.DeltaAngle(0, angle)) / (360f / Items.Count) * CircleRadius;
+                    angleDistance = Mathf.Abs(Mathf.DeltaAngle(0, angle)) / (360f / Items.Count);
                 }
                 else
                 {
                     distance = Mathf.Abs(Items[i].anchoredPosition.x - centerPoint.x);
+                    angleDistance = Mathf.Abs(i - _currentItemIndex);
                 }
+
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestIndex = i;
+                }
+
+                Items[i].SetSiblingIndex(Items.Count - (int)(angleDistance * 2));
 
                 float normalizedDistance = Mathf.Clamp01(distance / maxDistance);
 
@@ -183,6 +193,15 @@ namespace ScrollCarousel
                         Quaternion.Euler(30, targetRotationY, 0),
                         Time.deltaTime * _rotationSmoothSpeed
                     );
+                }
+            }
+
+            if (ColorAnimation)
+            {
+                for (int i = 0; i < Items.Count; i++)
+                {
+                    Color targetColor = (i == closestIndex) ? FocustedColor : NonFocustedColor;
+                    StartColorAnimation(Items[i], targetColor);
                 }
             }
         }
@@ -249,8 +268,6 @@ namespace ScrollCarousel
 
         public void OnEndDrag(PointerEventData eventData)
         {
-            float swipeDistance = eventData.position.x - _startDragPosition.x;
-
             if (InfiniteScroll)
             {
                 float closestDistance = float.MaxValue;
@@ -320,20 +337,10 @@ namespace ScrollCarousel
                 bool isFocused = i == _currentItemIndex;
                 
                 item.GetComponent<CarouselButton>()?.SetFocus(isFocused);
-                
-                if (ColorAnimation)
-                {
-                    var image = item.GetComponent<Image>();
-                    if (image != null)
-                    {
-                        Color targetColor = isFocused ? FocustedColor : NonFocustedColor;
-                        StartCoroutine(ColorAnimationCoroutine(item, targetColor));
-                    }
-                }
             }
         }
 
-        private void GoToNext()
+        public void GoToNext()
         {
             if (InfiniteScroll)
             {
@@ -345,7 +352,7 @@ namespace ScrollCarousel
             }
         }
 
-        private void GoToPrevious()
+        public void GoToPrevious()
         {
             if (InfiniteScroll)
             {
@@ -357,11 +364,30 @@ namespace ScrollCarousel
             }
         }
 
+        public void ForceUpdate()
+        {
+            PositionItems(false);
+            UpdateItemsAppearance();
+        }
+
+        private void StartColorAnimation(RectTransform item, Color targetColor)
+        {
+            if (_activeColorAnimations.ContainsKey(item))
+            {
+                StopCoroutine(_activeColorAnimations[item]);
+                _activeColorAnimations.Remove(item);
+            }
+            _activeColorAnimations[item] = StartCoroutine(ColorAnimationCoroutine(item, targetColor));
+        }
 
         private IEnumerator ColorAnimationCoroutine(RectTransform item, Color targetColor)
         {
             Image image = item.GetComponent<Image>();
-            if (image == null) yield break;
+            if (image == null) 
+            {
+                _activeColorAnimations.Remove(item);
+                yield break;
+            }
 
             Color startColor = image.color;
             float elapsedTime = 0f;
@@ -373,12 +399,9 @@ namespace ScrollCarousel
                 image.color = Color.Lerp(startColor, targetColor, elapsedTime / duration);
                 yield return null;
             }
-        }
 
-        public void ForceUpdate()
-        {
-            PositionItems(false);
-            UpdateItemsAppearance();
+            image.color = targetColor;
+            _activeColorAnimations.Remove(item);
         }
     }
 }
