@@ -8,7 +8,7 @@ namespace ScrollCarousel
     public class ScrollCarouselEditor : Editor
     {
         private Carousel carousel;
-        
+
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
@@ -17,7 +17,7 @@ namespace ScrollCarousel
 
             GUILayout.BeginVertical("box");
             GUILayout.Label("Carousel Editor", EditorStyles.boldLabel);
-            
+
             if (GUILayout.Button("Add All Children to Items"))
             {
                 AddAllChildrenToItemList();
@@ -104,7 +104,8 @@ namespace ScrollCarousel
             if (carousel.Items.Count == 0) return;
 
             Vector2 centerPoint = carousel.GetComponent<RectTransform>().rect.center;
-            float maxDistance = carousel.InfiniteScroll ? carousel.CircleRadius : GetItemspacing(0);
+            float maxDistance = carousel.InfiniteScroll ? carousel.CircleRadius :
+                (carousel.Items.Count > 1 ? GetItemspacing(0) : 100f); // Default value for single item
 
             for (int i = 0; i < carousel.Items.Count; i++)
             {
@@ -149,26 +150,34 @@ namespace ScrollCarousel
 
         private float GetItemspacing(int index)
         {
+            // Single item
+            if (carousel.Items.Count <= 1) return carousel.Itemspacing;
+
+            if (index >= carousel.Items.Count - 1) return carousel.Itemspacing;
+
             float currentItemscale = (index == carousel.StartItem) ? carousel.CenteredScale : carousel.NonCenteredScale;
             float nextItemscale = (index + 1 == carousel.StartItem) ? carousel.CenteredScale : carousel.NonCenteredScale;
-            
+
             float currentWidth = carousel.Items[index].rect.width * currentItemscale;
             float nextWidth = carousel.Items[index + 1].rect.width * nextItemscale;
-            
+
             return (currentWidth + nextWidth) / 2 + carousel.Itemspacing;
         }
 
         private float GetTotalOffset(int index)
         {
+            // Single item
+            if (carousel.Items.Count <= 1) return 0f;
+
             float offset = 0f;
             int startIdx = Math.Min(index, carousel.StartItem);
             int endIdx = Math.Max(index, carousel.StartItem);
-            
+
             for (int i = startIdx; i < endIdx; i++)
             {
                 offset += GetItemspacing(i);
             }
-            
+
             return index < carousel.StartItem ? -offset : offset;
         }
     }
